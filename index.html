@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Interview Carousel Generator</title>
+<style>
+:root{--bg:#0b0b0f;--panel:#17171d;--line:#303039;--muted:#9a9aa6;--accent:#a78bfa}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#fff;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif}
+.app{min-height:100vh;display:grid;grid-template-columns:360px minmax(0,1fr);gap:28px;padding:24px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:20px;position:sticky;top:18px;z-index:5}
+h2{margin:0 0 6px;font-size:21px}.sub{font-size:12px;color:var(--muted);line-height:1.45;margin-bottom:16px}
+label{display:block;color:#aaaab4;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;margin:13px 0 6px}
+input,textarea{width:100%;background:#0d0d12;border:1px solid #363640;border-radius:10px;color:#fff;padding:11px 12px;font:inherit;outline:none}
+textarea{min-height:105px;resize:vertical;line-height:1.4}input:focus,textarea:focus{border-color:#777}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:15px}.actions button:first-child{grid-column:1/-1}
+button{border:0;border-radius:10px;padding:12px;background:#fff;color:#111;font-weight:900;cursor:pointer}
+button.dark{background:#2a2a31;color:#fff}.status{margin-top:10px;font-size:12px;color:#999}
+.stage{min-width:0;display:flex;justify-content:center;align-items:flex-start;padding:8px}
+.preview{width:min(100%,760px)}
+.slideNav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;color:#aaa;font-size:13px}
+.navBtns{display:flex;gap:6px}.navBtns button{padding:8px 12px;background:#24242b;color:#fff}
+.viewport{width:100%;aspect-ratio:4/5;background:#111;border-radius:12px;display:flex;justify-content:center;align-items:center;overflow:hidden}
+.card{width:1080px;height:1350px;flex:none;transform-origin:center center;position:relative;overflow:hidden;background:#0a0a0d;color:#f5f5f7;padding:74px 78px;display:flex;flex-direction:column}
+.glow{position:absolute;width:620px;height:620px;border-radius:50%;right:-230px;top:-210px;background:radial-gradient(circle,rgba(139,92,246,.30),transparent 67%)}
+.glow2{position:absolute;width:480px;height:480px;border-radius:50%;left:-300px;bottom:-280px;background:radial-gradient(circle,rgba(59,130,246,.16),transparent 68%)}
+.grid{position:absolute;inset:0;opacity:.075;background-image:linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px);background-size:70px 70px;mask-image:linear-gradient(to bottom,black,transparent 78%)}
+.top,.main,.answer,.bottom{position:relative;z-index:2}
+.top{display:flex;justify-content:space-between;align-items:center}.brand{font-size:25px;font-weight:950;letter-spacing:-.04em}.num{font-size:19px;color:#888893;font-weight:800}
+.badge{display:inline-flex;margin-top:110px;padding:9px 14px;border:1px solid #3a3a44;border-radius:999px;color:#b9aaff;font-size:16px;font-weight:850;text-transform:uppercase;letter-spacing:.06em}
+.question{font-size:70px;line-height:1.05;letter-spacing:-.045em;margin:27px 0 0;font-weight:950;max-width:920px}
+.swipe{position:absolute;right:78px;bottom:105px;z-index:3;color:#aaaab4;font-size:17px;font-weight:850;letter-spacing:.06em}
+.arrow{display:inline-block;margin-left:7px;font-size:25px;color:#c4b5fd}
+.answer{margin-top:auto;border:1px solid #34343e;background:rgba(255,255,255,.055);border-radius:24px;padding:30px 34px;min-height:270px;display:flex;flex-direction:column;justify-content:center}
+.answerLabel{font-size:16px;color:#b9aaff;font-weight:900;letter-spacing:.1em;margin-bottom:13px}.answerText{font-size:30px;line-height:1.45;color:#d9d9e0}
+.bottom{margin-top:25px;display:flex;justify-content:space-between;color:#777782;font-size:15px;font-weight:750}.handle{color:#a5a5ae}
+.answerSlide .answer{margin-top:85px;flex:1;min-height:0}.answerSlide .answerText{font-size:31px}.page{color:#777782}
+@media(max-width:850px){.app{display:block;padding:12px}.panel{position:relative;top:0;margin-bottom:18px}.stage{padding:0}.preview{width:100%}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="panel">
+<h2>Interview Carousel</h2>
+<div class="sub">Question → Answer carousel. Answer automatically splits into slides with a maximum of 8 lines per slide.</div>
+
+<div class="row">
+<div><label>Question #</label><input id="num" value="001"></div>
+<div><label>Category</label><input id="cat" value="JavaScript"></div>
+</div>
+
+<label>Question</label>
+<textarea id="question">What is the Event Loop in JavaScript?</textarea>
+
+<label>Answer</label>
+<textarea id="answer">The Event Loop allows JavaScript to handle asynchronous operations without blocking the main thread. It continuously checks whether the call stack is empty and moves callbacks from the task queue when JavaScript is ready to execute them.</textarea>
+
+<label>Brand / Handle</label><input id="brand" value="Vishal.dev">
+
+<div class="actions">
+<button onclick="generate()">Generate Carousel</button>
+<button class="dark" onclick="downloadCurrent()">Download Current PNG</button>
+<button class="dark" onclick="resetAll()">Reset</button>
+</div>
+<div class="status" id="status">1 question slide + answer slides will be generated.</div>
+</aside>
+
+<main class="stage">
+<div class="preview">
+<div class="slideNav">
+<div id="counter">Slide 1 / 2</div>
+<div class="navBtns"><button onclick="prev()">←</button><button onclick="next()">→</button></div>
+</div>
+<div class="viewport" id="viewport">
+<div class="card questionSlide" id="card">
+<div class="glow"></div><div class="glow2"></div><div class="grid"></div>
+<div class="top"><div class="brand" id="oBrand">Vishal.dev</div><div class="num">#<span id="oNum">001</span></div></div>
+<div class="main"><div class="badge" id="oCat">JavaScript</div><h1 class="question" id="oQuestion">What is the Event Loop in JavaScript?</h1></div>
+<div class="swipe">SWIPE FOR ANSWER <span class="arrow">→</span></div>
+<div class="bottom"><span>Interview Preparation</span><span class="handle" id="oHandle">@Vishal.dev</span></div>
+</div>
+</div>
+</div>
+</main>
+</div>
+
+<script>
+let slides=[],current=0;
+const $=id=>document.getElementById(id);
+const inputs=["num","cat","question","answer","brand"];
+inputs.forEach(id=>$(id).addEventListener("input",generate));
+
+function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));}
+
+function splitAnswer(text){
+  // Roughly 8 visual lines per slide. Lines are word-wrapped to ~42 chars.
+  const words=text.trim().split(/\s+/); const chunks=[]; let line="",lines=[];
+  for(const w of words){
+    const candidate=line?line+" "+w:w;
+    if(candidate.length>42){ if(line)lines.push(line); line=w; }
+    else line=candidate;
+    if(lines.length===8){chunks.push(lines.join("\n"));lines=[];}
+  }
+  if(line)lines.push(line);
+  if(lines.length)chunks.push(lines.join("\n"));
+  return chunks.length?chunks:[""];
+}
+function generate(){
+  const answerSlides=splitAnswer($("answer").value);
+  slides=[{type:"question"},...answerSlides.map((text,i)=>({type:"answer",text,index:i+1}))];
+  if(current>=slides.length)current=slides.length-1;
+  render();
+  $("status").textContent=`${slides.length} slide${slides.length>1?"s":""}: 1 question + ${answerSlides.length} answer slide${answerSlides.length>1?"s":""}.`;
+}
+function baseCard(){
+  const card=document.createElement("div");card.className="card";
+  card.innerHTML=`<div class="glow"></div><div class="glow2"></div><div class="grid"></div>`;
+  return card;
+}
+function render(){
+  const s=slides[current]||{type:"question"};
+  let card;
+  if(s.type==="question"){
+    card=baseCard();card.innerHTML+=`
+      <div class="top"><div class="brand">${escapeHtml($("brand").value)}</div><div class="num">#${escapeHtml($("num").value)}</div></div>
+      <div class="main"><div class="badge">${escapeHtml($("cat").value)}</div><h1 class="question">${escapeHtml($("question").value)}</h1></div>
+      <div class="swipe">SWIPE FOR ANSWER <span class="arrow">→</span></div>
+      <div class="bottom"><span>Interview Preparation</span><span class="handle">@${escapeHtml($("brand").value.replace(/^@/,""))}</span></div>`;
+  }else{
+    card=baseCard();card.classList.add("answerSlide");card.innerHTML+=`
+      <div class="top"><div class="brand">${escapeHtml($("brand").value)}</div><div class="num">#${escapeHtml($("num").value)} · ANSWER ${s.index}</div></div>
+      <div class="badge">${escapeHtml($("cat").value)}</div>
+      <div class="answer"><div class="answerLabel">INTERVIEW ANSWER</div><div class="answerText">${escapeHtml(s.text).replace(/\n/g,"<br>")}</div></div>
+      <div class="bottom"><span>Save this answer</span><span class="page">${current+1} / ${slides.length}</span></div>`;
+  }
+  const vp=$("viewport");vp.innerHTML="";vp.appendChild(card);
+  fitCard(card);$("counter").textContent=`Slide ${current+1} / ${slides.length}`;
+}
+function fitCard(card){
+  const vp=$("viewport"),scale=Math.min(vp.clientWidth/1080,vp.clientHeight/1350);
+  card.style.transform=`scale(${scale})`;
+}
+window.addEventListener("resize",()=>{const c=document.querySelector(".viewport .card");if(c)fitCard(c)});
+function next(){if(current<slides.length-1){current++;render()}}
+function prev(){if(current>0){current--;render()}}
+
+async function downloadCurrent(){
+  const s = slides[current] || {type:"question"};
+  const W=1080,H=1350;
+  const canvas=document.createElement("canvas");
+  canvas.width=W; canvas.height=H;
+  const ctx=canvas.getContext("2d");
+
+  // Background
+  ctx.fillStyle="#0a0a0d"; ctx.fillRect(0,0,W,H);
+
+  // Glows
+  let g=ctx.createRadialGradient(900,80,20,900,80,500);
+  g.addColorStop(0,"rgba(139,92,246,.30)");
+  g.addColorStop(1,"rgba(139,92,246,0)");
+  ctx.fillStyle=g; ctx.fillRect(350,0,W,H);
+
+  g=ctx.createRadialGradient(0,1350,20,0,1350,430);
+  g.addColorStop(0,"rgba(59,130,246,.16)");
+  g.addColorStop(1,"rgba(59,130,246,0)");
+  ctx.fillStyle=g; ctx.fillRect(0,700,W,H-700);
+
+  // Subtle grid
+  ctx.strokeStyle="rgba(255,255,255,.055)";
+  ctx.lineWidth=1;
+  for(let x=0;x<=W;x+=70){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=0;y<=H;y+=70){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+
+  const brand=$("brand").value;
+  const num=$("num").value;
+  const cat=$("cat").value;
+
+  function font(weight,size){ctx.font=`${weight} ${size}px Inter, Arial, sans-serif`;}
+  function text(t,x,y,color,size,weight="700"){
+    font(weight,size);ctx.fillStyle=color;ctx.fillText(t,x,y);
+  }
+  function roundRect(x,y,w,h,r,fill,stroke){
+    ctx.beginPath();
+    ctx.roundRect(x,y,w,h,r);
+    if(fill){ctx.fillStyle=fill;ctx.fill();}
+    if(stroke){ctx.strokeStyle=stroke;ctx.stroke();}
+  }
+  function wrap(t,maxWidth,size,weight="900"){
+    font(weight,size);
+    const words=t.trim().split(/\s+/); let lines=[],line="";
+    for(const w of words){
+      const test=line?line+" "+w:w;
+      if(ctx.measureText(test).width>maxWidth && line){lines.push(line);line=w;}
+      else line=test;
+    }
+    if(line)lines.push(line);
+    return lines;
+  }
+  function drawWrapped(lines,x,y,size,lineHeight,color,weight="700"){
+    font(weight,size);ctx.fillStyle=color;
+    lines.forEach((line,i)=>ctx.fillText(line,x,y+i*lineHeight));
+  }
+
+  text(brand,78,88,"#f5f5f7",25,"900");
+  text(`#${num}${s.type==="answer" ? " · ANSWER "+s.index : ""}`,W-78,88,"#888893",19,"800");
+  ctx.textAlign="left";
+
+  if(s.type==="question"){
+    roundRect(78,190,190,48,24,"rgba(167,139,250,.05)","rgba(58,58,68,1)");
+    text(cat.toUpperCase(),95,221,"#b9aaff",16,"800");
+
+    let qSize=70;
+    let qLines=wrap($("question").value,900,qSize,"900");
+    while(qLines.length>5 && qSize>44){qSize-=2;qLines=wrap($("question").value,900,qSize,"900");}
+    drawWrapped(qLines,78,315,qSize,Math.round(qSize*1.07),"#f5f5f7","900");
+
+    text("SWIPE FOR ANSWER",W-355,H-105,"#aaaab4",17,"800");
+    text("→",W-90,H-98,"#c4b5fd",28,"900");
+    text("Interview Preparation",78,H-48,"#777782",15,"700");
+    text("@"+brand.replace(/^@/,""),W-78,H-48,"#a5a5ae",15,"700");
+  } else {
+    roundRect(78,155,190,48,24,"rgba(167,139,250,.05)","rgba(58,58,68,1)");
+    text(cat.toUpperCase(),95,186,"#b9aaff",16,"800");
+
+    roundRect(78,250,924,790,24,"rgba(255,255,255,.055)","rgba(52,52,62,1)");
+    text("INTERVIEW ANSWER",112,305,"#b9aaff",16,"900");
+
+    let aSize=31;
+    let lines=wrap(s.text,850,aSize,"700");
+    while(lines.length>8 && aSize>20){aSize--;lines=wrap(s.text,850,aSize,"700");}
+    const lh=Math.round(aSize*1.42);
+    drawWrapped(lines,112,365,aSize,lh,"#d9d9e0","700");
+
+    text("Save this answer",78,H-48,"#777782",15,"700");
+    ctx.textAlign="right";
+    text(`${current+1} / ${slides.length}`,W-78,H-48,"#777782",15,"700");
+    ctx.textAlign="left";
+  }
+
+  const filename=`interview-${num}-slide-${current+1}.png`;
+  canvas.toBlob(blob=>{
+    if(!blob){alert("PNG create nahi ho paayi. Browser ko reload karke try karo.");return;}
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");
+    a.href=url;a.download=filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),2000);
+  },"image/png");
+}
+
+function resetAll(){
+  $("num").value="001";$("cat").value="JavaScript";
+  $("question").value="What is the Event Loop in JavaScript?";
+  $("answer").value="The Event Loop allows JavaScript to handle asynchronous operations without blocking the main thread. It continuously checks whether the call stack is empty and moves callbacks from the task queue when JavaScript is ready to execute them.";
+  $("brand").value="Vishal.dev";current=0;generate();
+}
+generate();
+</script>
+</body>
+</html>
