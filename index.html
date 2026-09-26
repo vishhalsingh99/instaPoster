@@ -37,6 +37,7 @@ button.dark{background:#2a2a31;color:#fff}.status{margin-top:10px;font-size:12px
 .bottom{margin-top:25px;display:flex;justify-content:space-between;color:#777782;font-size:15px;font-weight:750}.handle{color:#a5a5ae}
 .answerSlide .answer{margin-top:85px;flex:1;min-height:0}.answerSlide .answerText{font-size:31px}.page{color:#777782}
 @media(max-width:850px){.app{display:block;padding:12px}.panel{position:relative;top:0;margin-bottom:18px}.stage{padding:0}.preview{width:100%}}
+
 </style>
 </head>
 <body>
@@ -46,20 +47,20 @@ button.dark{background:#2a2a31;color:#fff}.status{margin-top:10px;font-size:12px
 <div class="sub">Question → Answer carousel. Answer automatically splits into slides with a maximum of 8 lines per slide.</div>
 
 <div class="row">
-<div><label>Question #</label><input id="num" value="001"></div>
-<div><label>Category</label><input id="cat" value="JavaScript"></div>
+<div><label>Question #</label><input id="num" value="001" readonly title="Auto-maintained mission number"></div>
+<div><label>Category</label><input id="cat" value=""></div>
 </div>
 
 <label>Question</label>
-<textarea id="question">What is the Event Loop in JavaScript?</textarea>
+<textarea id="question"></textarea>
 
 <label>Answer</label>
-<textarea id="answer">The Event Loop allows JavaScript to handle asynchronous operations without blocking the main thread. It continuously checks whether the call stack is empty and moves callbacks from the task queue when JavaScript is ready to execute them.</textarea>
+<textarea id="answer"></textarea>
 
-<label>Brand / Handle</label><input id="brand" value="Vishal.dev">
+<label>Brand / Handle</label><input id="brand" value="" placeholder="BYTE.MARSHAL is fixed in generated images">
 
 <div class="actions">
-<button onclick="generate()">Generate Carousel</button>
+<button onclick="commitMission()">Generate Carousel</button>
 <button class="dark" onclick="downloadCurrent()">Download Current PNG</button>
 <button class="dark" onclick="resetAll()">Reset</button>
 </div>
@@ -75,10 +76,10 @@ button.dark{background:#2a2a31;color:#fff}.status{margin-top:10px;font-size:12px
 <div class="viewport" id="viewport">
 <div class="card questionSlide" id="card">
 <div class="glow"></div><div class="glow2"></div><div class="grid"></div>
-<div class="top"><div class="brand" id="oBrand">bite.marshal</div><div class="num">#<span id="oNum">001</span></div></div>
-<div class="main"><div class="badge" id="oCat"></div><h1 class="question" id="oQuestion">What is the Event Loop in JavaScript?</h1></div>
+<div class="top"><div class="brand" id="oBrand">Vishal.dev</div><div class="num">#<span id="oNum">001</span></div></div>
+<div class="main"><div class="badge" id="oCat">JavaScript</div><h1 class="question" id="oQuestion">What is the Event Loop in JavaScript?</h1></div>
 <div class="swipe">SWIPE FOR ANSWER <span class="arrow">→</span></div>
-<div class="bottom"><span>Interview Preparation</span><span class="handle" id="oHandle">@Vishal.dev</span></div>
+<div class="bottom"><span>Interview Preparation</span><span class="handle" id="oHandle">@byte.marshal</span></div>
 </div>
 </div>
 </div>
@@ -88,7 +89,7 @@ button.dark{background:#2a2a31;color:#fff}.status{margin-top:10px;font-size:12px
 <script>
 let slides=[],current=0;
 const $=id=>document.getElementById(id);
-const inputs=["num","cat","question","answer","brand"];
+const inputs=["cat","question","answer"];
 inputs.forEach(id=>$(id).addEventListener("input",generate));
 
 function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));}
@@ -106,12 +107,28 @@ function splitAnswer(text){
   if(lines.length)chunks.push(lines.join("\n"));
   return chunks.length?chunks:[""];
 }
+function getNextMission(){
+  const n=parseInt(localStorage.getItem("byteMarshalMissionNumber")||"1",10);
+  return Number.isFinite(n) && n>0 ? n : 1;
+}
+function padMission(n){return String(n).padStart(3,"0");}
+function syncMissionNumber(){
+  const n=getNextMission();
+  $("num").value=padMission(n);
+}
 function generate(){
   const answerSlides=splitAnswer($("answer").value);
   slides=[{type:"question"},...answerSlides.map((text,i)=>({type:"answer",text,index:i+1}))];
   if(current>=slides.length)current=slides.length-1;
   render();
   $("status").textContent=`${slides.length} slide${slides.length>1?"s":""}: 1 question + ${answerSlides.length} answer slide${answerSlides.length>1?"s":""}.`;
+}
+function commitMission(){
+  const n=getNextMission();
+  $("num").value=padMission(n);
+  localStorage.setItem("byteMarshalMissionNumber",String(n+1));
+  current=0;
+  generate();
 }
 function baseCard(){
   const card=document.createElement("div");card.className="card";
@@ -123,14 +140,14 @@ function render(){
   let card;
   if(s.type==="question"){
     card=baseCard();card.innerHTML+=`
-      <div class="top"><div class="brand">${escapeHtml($("brand").value)}</div><div class="num">#${escapeHtml($("num").value)}</div></div>
-      <div class="main"><div class="badge">${escapeHtml($("cat").value)}</div><h1 class="question">${escapeHtml($("question").value)}</h1></div>
+      <div class="top"><div class="brand">BYTE.MARSHAL</div><div class="num">#${escapeHtml($("num").value)}</div></div>
+      <div class="main"><div class="badge">${escapeHtml($("cat").value.trim() || "CODING")}</div><h1 class="question">${escapeHtml($("question").value)}</h1></div>
       <div class="swipe">SWIPE FOR ANSWER <span class="arrow">→</span></div>
-      <div class="bottom"><span>Interview Preparation</span><span class="handle">@${escapeHtml($("brand").value.replace(/^@/,""))}</span></div>`;
+      <div class="bottom"><span>Interview Preparation</span><span class="handle">@byte.marshal</span></div>`;
   }else{
     card=baseCard();card.classList.add("answerSlide");card.innerHTML+=`
-      <div class="top"><div class="brand">${escapeHtml($("brand").value)}</div><div class="num">#${escapeHtml($("num").value)} · ANSWER ${s.index}</div></div>
-      <div class="badge">${escapeHtml($("cat").value)}</div>
+      <div class="top"><div class="brand">BYTE.MARSHAL</div><div class="num">#${escapeHtml($("num").value)} · ANSWER ${s.index}</div></div>
+      <div class="badge">${escapeHtml($("cat").value.trim() || "CODING")}</div>
       <div class="answer"><div class="answerLabel">INTERVIEW ANSWER</div><div class="answerText">${escapeHtml(s.text).replace(/\n/g,"<br>")}</div></div>
       <div class="bottom"><span>Save this answer</span><span class="page">${current+1} / ${slides.length}</span></div>`;
   }
@@ -152,39 +169,56 @@ async function downloadCurrent(){
   canvas.width=W; canvas.height=H;
   const ctx=canvas.getContext("2d");
 
-  // Background
-  ctx.fillStyle="#0a0a0d"; ctx.fillRect(0,0,W,H);
+  // ===== BYTE.MARSHAL — TACTICAL CODING CARD =====
+  ctx.fillStyle="#080b08";
+  ctx.fillRect(0,0,W,H);
 
-  // Glows
-  let g=ctx.createRadialGradient(900,80,20,900,80,500);
-  g.addColorStop(0,"rgba(139,92,246,.30)");
-  g.addColorStop(1,"rgba(139,92,246,0)");
-  ctx.fillStyle=g; ctx.fillRect(350,0,W,H);
+  // Tactical green glow
+  let g=ctx.createRadialGradient(870,120,20,870,120,540);
+  g.addColorStop(0,"rgba(143,166,107,.22)");
+  g.addColorStop(.42,"rgba(76,96,53,.10)");
+  g.addColorStop(1,"rgba(0,0,0,0)");
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
 
-  g=ctx.createRadialGradient(0,1350,20,0,1350,430);
-  g.addColorStop(0,"rgba(59,130,246,.16)");
-  g.addColorStop(1,"rgba(59,130,246,0)");
-  ctx.fillStyle=g; ctx.fillRect(0,700,W,H-700);
+  // Amber command glow
+  g=ctx.createRadialGradient(90,1250,10,90,1250,390);
+  g.addColorStop(0,"rgba(228,184,95,.12)");
+  g.addColorStop(1,"rgba(0,0,0,0)");
+  ctx.fillStyle=g; ctx.fillRect(0,700,W,650);
 
-  // Subtle grid
-  ctx.strokeStyle="rgba(255,255,255,.055)";
+  // Fine tactical grid
+  ctx.strokeStyle="rgba(177,198,139,.045)";
   ctx.lineWidth=1;
-  for(let x=0;x<=W;x+=70){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
-  for(let y=0;y<=H;y+=70){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+  for(let x=0;x<=W;x+=54){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=0;y<=H;y+=54){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
 
-  const brand=$("brand").value;
-  const num=$("num").value;
-  const cat=$("cat").value;
+  // Corner scan lines
+  ctx.strokeStyle="rgba(143,166,107,.22)";
+  ctx.lineWidth=2;
+  [[42,42,170,42],[42,42,42,170],[W-42,42,W-170,42],[W-42,42,W-42,170],
+   [42,H-42,170,H-42],[42,H-42,42,H-170],[W-42,H-42,W-170,H-42],[W-42,H-42,W-42,H-170]]
+  .forEach(a=>{ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(a[2],a[3]);ctx.stroke();});
 
-  function font(weight,size){ctx.font=`${weight} ${size}px Inter, Arial, sans-serif`;}
+  const brand="BYTE.MARSHAL";
+  const num=$( "num" ).value;
+  const cat=$( "cat" ).value;
+
+  function font(weight,size){
+    ctx.font=`${weight} ${size}px Inter, Arial, sans-serif`;
+  }
+  function mono(weight,size){
+    ctx.font=`${weight} ${size}px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`;
+  }
   function text(t,x,y,color,size,weight="700"){
     font(weight,size);ctx.fillStyle=color;ctx.fillText(t,x,y);
   }
+  function mtext(t,x,y,color,size,weight="700"){
+    mono(weight,size);ctx.fillStyle=color;ctx.fillText(t,x,y);
+  }
   function roundRect(x,y,w,h,r,fill,stroke){
-    ctx.beginPath();
-    ctx.roundRect(x,y,w,h,r);
+    ctx.beginPath();ctx.roundRect(x,y,w,h,r);
     if(fill){ctx.fillStyle=fill;ctx.fill();}
-    if(stroke){ctx.strokeStyle=stroke;ctx.stroke();}
+    if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=1;ctx.stroke();}
   }
   function wrap(t,maxWidth,size,weight="900"){
     font(weight,size);
@@ -202,61 +236,104 @@ async function downloadCurrent(){
     lines.forEach((line,i)=>ctx.fillText(line,x,y+i*lineHeight));
   }
 
-  text(brand,78,88,"#f5f5f7",25,"900");
-  text(`#${num}${s.type==="answer" ? " · ANSWER "+s.index : ""}`,W-78,88,"#888893",19,"800");
+  // Header
+  mtext("BYTE.MARSHAL",78,92,"#c8d99c",25,"900");
+  mtext(s.type==="answer" ? `// FIELD ANSWER ${s.index}` : "// CODING FIELD MANUAL",
+        78,120,"#667455",13,"700");
+
+  ctx.textAlign="right";
+  mtext(`#${num}${s.type==="answer" ? " · "+String(s.index).padStart(2,"0") : ""}`,
+        W-78,92,"#aab68f",19,"800");
+  mtext("STATUS: ACTIVE",W-78,120,"#69765c",12,"700");
   ctx.textAlign="left";
 
+  // Divider
+  ctx.strokeStyle="rgba(143,166,107,.30)";
+  ctx.beginPath();ctx.moveTo(78,153);ctx.lineTo(W-78,153);ctx.stroke();
+
   if(s.type==="question"){
-    roundRect(78,190,190,48,24,"rgba(167,139,250,.05)","rgba(58,58,68,1)");
-    text(cat.toUpperCase(),95,221,"#b9aaff",16,"800");
+    // Mission / category badge
+    roundRect(78,198,360,52,7,"rgba(143,166,107,.07)","rgba(143,166,107,.38)");
+    mtext("MISSION // "+cat.toUpperCase(),96,231,"#c8d99c",15,"800");
 
-    let qSize=70;
-    let qLines=wrap($("question").value,900,qSize,"900");
-    while(qLines.length>5 && qSize>44){qSize-=2;qLines=wrap($("question").value,900,qSize,"900");}
-    drawWrapped(qLines,78,315,qSize,Math.round(qSize*1.07),"#f5f5f7","900");
+    // Small coding glyph
+    ctx.strokeStyle="#8fa66b";ctx.lineWidth=3;
+    ctx.beginPath();ctx.moveTo(W-190,198);ctx.lineTo(W-130,198);ctx.lineTo(W-105,223);ctx.lineTo(W-130,248);ctx.lineTo(W-190,248);ctx.stroke();
+    mtext("01",W-174,232,"#e4b85f",15,"900");
 
-    text("SWIPE FOR ANSWER",W-355,H-105,"#aaaab4",17,"800");
-    text("→",W-90,H-98,"#c4b5fd",28,"900");
-    text("Interview Preparation",78,H-48,"#777782",15,"700");
-    text("@"+brand.replace(/^@/,""),W-78,H-48,"#a5a5ae",15,"700");
+    let qSize=68;
+    let qLines=wrap($( "question" ).value,850,qSize,"900");
+    while(qLines.length>5 && qSize>42){qSize-=2;qLines=wrap($( "question" ).value,850,qSize,"900");}
+    drawWrapped(qLines,78,355,qSize,Math.round(qSize*1.08),"#eef2e7","900");
+
+    // Tactical instruction panel
+    roundRect(78,1030,924,128,10,"rgba(143,166,107,.045)","rgba(143,166,107,.25)");
+    mtext("MISSION PROTOCOL",104,1070,"#8fa66b",13,"900");
+    mtext("READ  //  THINK  //  ANSWER",104,1110,"#d7dec9",21,"900");
+    mtext("SWIPE → DECRYPT THE ANSWER",104,1138,"#e4b85f",13,"800");
+
+    mtext("BYTE.MARSHAL // 01",78,H-52,"#68735d",12,"700");
+    ctx.textAlign="right";
+    mtext("CLASSIFIED: CODING KNOWLEDGE",W-78,H-52,"#68735d",12,"700");
+    ctx.textAlign="left";
+
   } else {
-    roundRect(78,155,190,48,24,"rgba(167,139,250,.05)","rgba(58,58,68,1)");
-    text(cat.toUpperCase(),95,186,"#b9aaff",16,"800");
+    // Answer category
+    roundRect(78,190,360,52,7,"rgba(143,166,107,.07)","rgba(143,166,107,.38)");
+    mtext("MISSION // "+cat.toUpperCase(),96,223,"#c8d99c",15,"800");
 
-    roundRect(78,250,924,790,24,"rgba(255,255,255,.055)","rgba(52,52,62,1)");
-    text("INTERVIEW ANSWER",112,305,"#b9aaff",16,"900");
+    // Main answer panel
+    roundRect(78,275,924,760,12,"rgba(255,255,255,.035)","rgba(143,166,107,.28)");
+
+    // Terminal-style header
+    ctx.fillStyle="rgba(143,166,107,.08)";
+    ctx.fillRect(78,275,924,70);
+    ctx.strokeStyle="rgba(143,166,107,.22)";
+    ctx.beginPath();ctx.moveTo(78,345);ctx.lineTo(1002,345);ctx.stroke();
+
+    // Status lights
+    ["#8fa66b","#e4b85f","#c85d4b"].forEach((c,i)=>{
+      ctx.fillStyle=c;ctx.beginPath();ctx.arc(108+i*25,310,5,0,Math.PI*2);ctx.fill();
+    });
+    mtext("FIELD ANSWER // DECRYPTED",190,317,"#aab68f",14,"800");
 
     let aSize=31;
     let lines=wrap(s.text,850,aSize,"700");
     while(lines.length>8 && aSize>20){aSize--;lines=wrap(s.text,850,aSize,"700");}
     const lh=Math.round(aSize*1.42);
-    drawWrapped(lines,112,365,aSize,lh,"#d9d9e0","700");
+    drawWrapped(lines,112,405,aSize,lh,"#dfe6d6","700");
 
-    text("Save this answer",78,H-48,"#777782",15,"700");
+    // Code-like footer
+    mtext("✓ VERIFIED // INTERVIEW READY",112,1000,"#8fa66b",13,"800");
+
+    mtext("BYTE.MARSHAL // FIELD MANUAL",78,H-52,"#68735d",12,"700");
     ctx.textAlign="right";
-    text(`${current+1} / ${slides.length}`,W-78,H-48,"#777782",15,"700");
+    mtext(`PAGE ${String(current+1).padStart(2,"0")} / ${String(slides.length).padStart(2,"0")}`,
+          W-78,H-52,"#68735d",12,"700");
     ctx.textAlign="left";
   }
 
-  const filename=`interview-${num}-slide-${current+1}.png`;
+  const filename=`byte-marshal-${num}-slide-${current+1}.png`;
   canvas.toBlob(blob=>{
     if(!blob){alert("PNG create nahi ho paayi. Browser ko reload karke try karo.");return;}
     const url=URL.createObjectURL(blob);
     const a=document.createElement("a");
     a.href=url;a.download=filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+    document.body.appendChild(a);a.click();a.remove();
     setTimeout(()=>URL.revokeObjectURL(url),2000);
   },"image/png");
 }
 
 function resetAll(){
-  $("num").value="001";$("cat").value="JavaScript";
-  $("question").value="What is the Event Loop in JavaScript?";
-  $("answer").value="The Event Loop allows JavaScript to handle asynchronous operations without blocking the main thread. It continuously checks whether the call stack is empty and moves callbacks from the task queue when JavaScript is ready to execute them.";
-  $("brand").value="Vishal.dev";current=0;generate();
+  $("cat").value="";
+  $("question").value="";
+  $("answer").value="";
+  $("brand").value="";
+  current=0;
+  syncMissionNumber();
+  generate();
 }
+syncMissionNumber();
 generate();
 </script>
 </body>
